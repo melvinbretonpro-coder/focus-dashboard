@@ -557,8 +557,8 @@ function initSessionView() {
 }
 
 function togglePause() {
-    const pauseIcon = document.querySelector('.icon-pause');
-    const playIcon = document.querySelector('.icon-play');
+    const pauseIcon = document.querySelector('#btn-pause .icon-pause');
+    const playIcon = document.querySelector('#btn-pause .icon-play');
 
     if (state.timerState === 'running') {
         state.timerState = 'paused';
@@ -679,6 +679,31 @@ function handlePauseComplete() {
 // ========== PAUSE VIEW ==========
 function setupPauseView() {
     updateTimerDisplay();
+    // Reset pause icons state
+    const pauseIcon = document.querySelector('#btn-pause-break .icon-pause');
+    const playIcon = document.querySelector('#btn-pause-break .icon-play');
+    if (pauseIcon && playIcon) {
+        pauseIcon.style.display = 'inline';
+        playIcon.style.display = 'none';
+    }
+}
+
+function togglePauseBreak() {
+    const pauseIcon = document.querySelector('#btn-pause-break .icon-pause');
+    const playIcon = document.querySelector('#btn-pause-break .icon-play');
+
+    if (state.timerState === 'running') {
+        state.timerState = 'paused';
+        clearInterval(state.timerInterval);
+        pauseIcon.style.display = 'none';
+        playIcon.style.display = 'inline';
+    } else if (state.timerState === 'paused') {
+        state.timerState = 'running';
+        startTimer();
+        pauseIcon.style.display = 'inline';
+        playIcon.style.display = 'none';
+    }
+    saveState();
 }
 
 function initPauseView() {
@@ -686,6 +711,9 @@ function initPauseView() {
         clearInterval(state.timerInterval);
         handlePauseComplete();
     });
+
+    document.getElementById('btn-pause-break').addEventListener('click', togglePauseBreak);
+    document.getElementById('btn-stop-break').addEventListener('click', stopSession);
 }
 
 // ========== END VIEW ==========
@@ -767,10 +795,22 @@ function restoreSession() {
         if (state.timerState === 'running') {
             startTimer();
         } else if (state.timerState === 'paused') {
-            const pauseIcon = document.querySelector('.icon-pause');
-            const playIcon = document.querySelector('.icon-play');
-            pauseIcon.style.display = 'none';
-            playIcon.style.display = 'inline';
+            // Mettre à jour les icônes selon la vue active
+            if (state.timerMode === 'focus') {
+                const pauseIcon = document.querySelector('#btn-pause .icon-pause');
+                const playIcon = document.querySelector('#btn-pause .icon-play');
+                if (pauseIcon && playIcon) {
+                    pauseIcon.style.display = 'none';
+                    playIcon.style.display = 'inline';
+                }
+            } else {
+                const pauseIcon = document.querySelector('#btn-pause-break .icon-pause');
+                const playIcon = document.querySelector('#btn-pause-break .icon-play');
+                if (pauseIcon && playIcon) {
+                    pauseIcon.style.display = 'none';
+                    playIcon.style.display = 'inline';
+                }
+            }
         }
 
         updateTimerDisplay();
