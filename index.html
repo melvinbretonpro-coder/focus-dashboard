@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Focus Dashboard - Choisissez votre méthode de travail et restez concentré">
+    <title>Focus Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- SVG Gradients for Timer -->
+    <svg style="position: absolute; width: 0; height: 0;">
+        <defs>
+            <linearGradient id="gradient-focus" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#10B981" />
+                <stop offset="100%" style="stop-color:#06B6D4" />
+            </linearGradient>
+            <linearGradient id="gradient-pause" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#F59E0B" />
+                <stop offset="100%" style="stop-color:#EC4899" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <div id="app">
+        <!-- ========== VIEW: DASHBOARD ========== -->
+        <section id="view-dashboard" class="view active">
+            <header class="header">
+                <h1 class="logo">Focus Dashboard</h1>
+                <p class="subtitle">Choisissez votre méthode de travail</p>
+            </header>
+
+            <div class="methods-grid">
+                <!-- Deep Work -->
+                <article class="method-card featured" data-method="deep-work">
+                    <div class="method-icon">🧠</div>
+                    <h2 class="method-title">Deep Work</h2>
+                    <p class="method-objective">Concentration maximale sur une tâche complexe</p>
+                    <div class="method-timing">
+                        <span class="timing-badge focus">2-4h focus</span>
+                    </div>
+                    <button class="btn-select">Sélectionner</button>
+                </article>
+
+                <!-- Pomodoro -->
+                <article class="method-card featured" data-method="pomodoro">
+                    <div class="method-icon">🍅</div>
+                    <h2 class="method-title">Pomodoro</h2>
+                    <p class="method-objective">Avancer par sprints courts et réguliers</p>
+                    <div class="method-timing">
+                        <span class="timing-badge focus">25 min focus</span>
+                        <span class="timing-badge pause">5 min pause</span>
+                    </div>
+                    <button class="btn-select">Sélectionner</button>
+                </article>
+
+                <!-- 90/20 -->
+                <article class="method-card" data-method="90-20">
+                    <div class="method-icon">⚡</div>
+                    <h2 class="method-title">90 / 20</h2>
+                    <p class="method-objective">Suivre le rythme naturel du cerveau</p>
+                    <div class="method-timing">
+                        <span class="timing-badge focus">1h30 focus</span>
+                        <span class="timing-badge pause">20 min pause</span>
+                    </div>
+                    <button class="btn-select">Sélectionner</button>
+                </article>
+
+                <!-- Timer Libre -->
+                <article class="method-card" data-method="timer-libre">
+                    <div class="method-icon">⏱️</div>
+                    <h2 class="method-title">Timer Libre</h2>
+                    <p class="method-objective">Un simple timer sans règles</p>
+                    <div class="method-timing">
+                        <span class="timing-badge custom">Durée personnalisée</span>
+                    </div>
+                    <button class="btn-select">Sélectionner</button>
+                </article>
+            </div>
+        </section>
+
+        <!-- ========== VIEW: CONFIGURATION ========== -->
+        <section id="view-config" class="view">
+            <button class="btn-back" id="btn-back-config">← Retour</button>
+
+            <div class="config-container">
+                <div class="config-header">
+                    <span class="config-icon" id="config-method-icon">🧠</span>
+                    <h2 class="config-title" id="config-method-title">Deep Work Pur</h2>
+                </div>
+
+                <div class="config-rules" id="config-rules-container">
+                    <h3>Règles à respecter</h3>
+                    <ul id="config-rules-list">
+                        <!-- Populated dynamically -->
+                    </ul>
+                </div>
+
+                <div class="config-timing">
+                    <div class="timing-input-group">
+                        <label>Durée focus</label>
+                        <div class="time-inputs">
+                            <div class="time-input-unit">
+                                <div class="input-stepper">
+                                    <button class="stepper-btn minus" data-target="focus-hours">−</button>
+                                    <input type="number" id="focus-hours" min="0" max="8" value="2">
+                                    <button class="stepper-btn plus" data-target="focus-hours">+</button>
+                                </div>
+                                <span class="unit-label">h</span>
+                            </div>
+                            <div class="time-input-unit">
+                                <div class="input-stepper">
+                                    <button class="stepper-btn minus" data-target="focus-minutes">−</button>
+                                    <input type="number" id="focus-minutes" min="0" max="59" value="0">
+                                    <button class="stepper-btn plus" data-target="focus-minutes">+</button>
+                                </div>
+                                <span class="unit-label">min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timing-input-group" id="pause-duration-group">
+                        <label>Durée pause</label>
+                        <div class="time-inputs">
+                            <div class="time-input-unit">
+                                <div class="input-stepper">
+                                    <button class="stepper-btn minus" data-target="pause-hours">−</button>
+                                    <input type="number" id="pause-hours" min="0" max="2" value="0">
+                                    <button class="stepper-btn plus" data-target="pause-hours">+</button>
+                                </div>
+                                <span class="unit-label">h</span>
+                            </div>
+                            <div class="time-input-unit">
+                                <div class="input-stepper">
+                                    <button class="stepper-btn minus" data-target="pause-minutes">−</button>
+                                    <input type="number" id="pause-minutes" min="0" max="59" value="15">
+                                    <button class="stepper-btn plus" data-target="pause-minutes">+</button>
+                                </div>
+                                <span class="unit-label">min</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task Input (for single task methods) -->
+                <div class="config-task" id="config-task-single">
+                    <label for="task-input">Votre tâche principale</label>
+                    <input type="text" id="task-input" placeholder="Ex: Rédiger le rapport trimestriel">
+                </div>
+
+                <!-- Task List (for Pomodoro) -->
+                <div class="config-task" id="config-task-list" style="display: none;">
+                    <label>Vos tâches (checklist)</label>
+                    <div class="task-list-container">
+                        <div class="task-input-row">
+                            <input type="text" id="new-task-input" placeholder="Ajouter une tâche...">
+                            <button class="btn-add-task" id="btn-add-task">+</button>
+                        </div>
+
+                        <!-- Pending Tasks -->
+                        <div class="tasks-section">
+                            <h4 class="tasks-section-title">À faire</h4>
+                            <ul id="tasks-list" class="tasks-list sortable">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+
+                        <!-- Completed Tasks -->
+                        <div class="tasks-section completed-section" id="completed-section" style="display: none;">
+                            <h4 class="tasks-section-title completed">✓ Terminées</h4>
+                            <ul id="completed-tasks-list" class="tasks-list completed">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-primary btn-start" id="btn-start-session">
+                    Démarrer la session
+                </button>
+            </div>
+        </section>
+
+        <!-- ========== VIEW: SESSION (ACTIVE TIMER) ========== -->
+        <section id="view-session" class="view">
+            <div class="session-container">
+                <div class="session-header">
+                    <span class="session-method-badge" id="session-method-name">Deep Work Pur</span>
+                    <span class="session-cycle" id="session-cycle">Cycle 1/4</span>
+                </div>
+
+                <div class="timer-display">
+                    <svg class="timer-ring" viewBox="0 0 200 200">
+                        <circle class="timer-ring-bg" cx="100" cy="100" r="90" />
+                        <circle class="timer-ring-progress" cx="100" cy="100" r="90" id="timer-progress" />
+                    </svg>
+                    <div class="timer-text">
+                        <span class="timer-time" id="timer-time">01:30:00</span>
+                        <span class="timer-label" id="timer-label">Focus</span>
+                    </div>
+                </div>
+
+                <div class="session-task" id="session-task-display">
+                    <h3>Tâche en cours</h3>
+                    <p id="current-task-text">Rédiger le rapport trimestriel</p>
+                </div>
+
+                <!-- Checklist for Pomodoro -->
+                <div class="session-checklist" id="session-checklist" style="display: none;">
+                    <h3>Tâches</h3>
+                    <ul id="session-tasks-list" class="tasks-list session-mode">
+                        <!-- Populated dynamically -->
+                    </ul>
+                </div>
+
+                <div class="session-rules" id="session-rules-container">
+                    <p id="session-current-rule">💡 Aucune interruption • Téléphone éteint</p>
+                </div>
+
+                <div class="session-controls">
+                    <button class="btn-control btn-pause" id="btn-pause">
+                        <span class="icon-pause">⏸</span>
+                        <span class="icon-play" style="display: none;">▶</span>
+                    </button>
+                    <button class="btn-control btn-stop" id="btn-stop">⏹ Arrêter</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== VIEW: PAUSE ========== -->
+        <section id="view-pause" class="view">
+            <div class="pause-container">
+                <div class="pause-icon">☕</div>
+                <h2 class="pause-title">Temps de pause !</h2>
+                <p class="pause-message">Éloignez-vous de l'écran. Bougez, hydratez-vous.</p>
+
+                <div class="timer-display pause-mode">
+                    <svg class="timer-ring" viewBox="0 0 200 200">
+                        <circle class="timer-ring-bg" cx="100" cy="100" r="90" />
+                        <circle class="timer-ring-progress pause" cx="100" cy="100" r="90" id="pause-timer-progress" />
+                    </svg>
+                    <div class="timer-text">
+                        <span class="timer-time" id="pause-timer-time">00:05:00</span>
+                        <span class="timer-label">Pause</span>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="btn-skip-pause">Passer la pause</button>
+            </div>
+        </section>
+
+        <!-- ========== VIEW: END/RECAP ========== -->
+        <section id="view-end" class="view">
+            <div class="end-container">
+                <div class="end-icon">🎉</div>
+                <h2 class="end-title">Session terminée !</h2>
+
+                <div class="end-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-focus-time">1:30</span>
+                        <span class="stat-label">de focus</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-cycles">1</span>
+                        <span class="stat-label">cycle(s)</span>
+                    </div>
+                </div>
+
+                <div class="end-task-recap" id="end-task-recap">
+                    <h3>Tâche accomplie</h3>
+                    <p id="end-task-text">Rédiger le rapport trimestriel</p>
+                </div>
+
+                <div class="end-actions">
+                    <button class="btn-primary" id="btn-new-session">Retour au menu</button>
+                    <button class="btn-secondary" id="btn-same-method">Même méthode</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
