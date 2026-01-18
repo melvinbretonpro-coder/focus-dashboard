@@ -903,11 +903,15 @@ body {
 }
 
 .timer-display.pause-mode {
-    margin-bottom: var(--space-2xl);
+    margin-bottom: var(--space-xl);
 }
 
 .timer-display.pause-mode .timer-ring {
     filter: drop-shadow(0 0 30px rgba(245, 158, 11, 0.3));
+}
+
+.pause-controls {
+    margin-bottom: var(--space-xl);
 }
 
 /* ---------- End View ---------- */
