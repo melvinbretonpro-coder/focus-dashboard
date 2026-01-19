@@ -90,7 +90,9 @@ let state = {
     timeRemaining: 0,
     totalTime: 0,
     timerInterval: null,
-    totalFocusTime: 0
+    totalFocusTime: 0,
+    timerEndTime: null,      // Timestamp de fin du timer
+    pausedTimeRemaining: 0   // Temps restant quand mis en pause
 };
 
 // ========== DOM ELEMENTS ==========
@@ -102,14 +104,26 @@ const views = {
     end: document.getElementById('view-end')
 };
 
-// ========== AUDIO NOTIFICATION ==========
+// ========== AUDIO & BROWSER NOTIFICATION ==========
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioContext = null;
+
+// Demander la permission pour les notifications au chargement
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
 
 function playNotificationSound() {
     try {
         if (!audioContext) {
             audioContext = new AudioContext();
+        }
+
+        // Resume audio context if suspended (required for background playback)
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
         }
 
         const oscillator = audioContext.createOscillator();
@@ -132,6 +146,25 @@ function playNotificationSound() {
         oscillator.stop(audioContext.currentTime + 0.6);
     } catch (e) {
         console.log('Audio notification not available');
+    }
+}
+
+function showBrowserNotification(title, body) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        const notification = new Notification(title, {
+            body: body,
+            icon: '🎯',
+            tag: 'focus-dashboard-timer',
+            requireInteraction: true
+        });
+
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+
+        // Auto-close after 10 seconds
+        setTimeout(() => notification.close(), 10000);
     }
 }
 
@@ -481,6 +514,7 @@ function startSession() {
     state.timeRemaining = state.focusDuration * 60;
     state.totalTime = state.focusDuration * 60;
     state.totalFocusTime = 0;
+    state.timerEndTime = null; // Reset pour le nouveau timer
 
     setupSessionView();
     showView('session');
@@ -563,6 +597,7 @@ function togglePause() {
     if (state.timerState === 'running') {
         state.timerState = 'paused';
         clearInterval(state.timerInterval);
+        state.timerEndTime = null; // Reset pour recalculer à la reprise
         pauseIcon.style.display = 'none';
         playIcon.style.display = 'inline';
     } else if (state.timerState === 'paused') {
@@ -577,6 +612,7 @@ function togglePause() {
 function stopSession() {
     clearInterval(state.timerInterval);
     state.timerState = 'stopped';
+    state.timerEndTime = null;
     showEndView();
 }
 
@@ -584,21 +620,71 @@ function stopSession() {
 function startTimer() {
     state.timerState = 'running';
 
+    // Calculer le timestamp de fin basé sur le temps restant actuel
+    if (!state.timerEndTime) {
+        state.timerEndTime = Date.now() + (state.timeRemaining * 1000);
+    }
+
+    saveState();
+
     state.timerInterval = setInterval(() => {
+        // Calculer le temps restant basé sur le timestamp de fin
+        const now = Date.now();
+        const remaining = Math.max(0, Math.round((state.timerEndTime - now) / 1000));
+
+        // Calculer le temps de focus écoulé depuis le dernier tick
+        if (state.timerMode === 'focus' && remaining < state.timeRemaining) {
+            state.totalFocusTime += (state.timeRemaining - remaining);
+        }
+
+        state.timeRemaining = remaining;
+
         if (state.timeRemaining > 0) {
-            state.timeRemaining--;
-
-            if (state.timerMode === 'focus') {
-                state.totalFocusTime++;
-            }
-
             updateTimerDisplay();
             saveState();
         } else {
             clearInterval(state.timerInterval);
+            state.timerEndTime = null;
             timerComplete();
         }
     }, 1000);
+}
+
+// Recalculer le temps quand l'onglet redevient visible
+function handleVisibilityChange() {
+    if (document.visibilityState === 'visible' && state.timerState === 'running' && state.timerEndTime) {
+        const now = Date.now();
+        const remaining = Math.max(0, Math.round((state.timerEndTime - now) / 1000));
+
+        // Si le timer aurait dû se terminer pendant qu'on était en arrière-plan
+        if (remaining <= 0) {
+            clearInterval(state.timerInterval);
+            state.timeRemaining = 0;
+            state.timerEndTime = null;
+            timerComplete();
+        } else {
+            state.timeRemaining = remaining;
+            updateTimerDisplay();
+        }
+    }
+}
+
+// Vérifier périodiquement si le timer est terminé (même en arrière-plan)
+function setupBackgroundCheck() {
+    // Vérifier toutes les 5 secondes si le timer est terminé
+    setInterval(() => {
+        if (state.timerState === 'running' && state.timerEndTime) {
+            const now = Date.now();
+            const remaining = Math.round((state.timerEndTime - now) / 1000);
+
+            if (remaining <= 0) {
+                clearInterval(state.timerInterval);
+                state.timeRemaining = 0;
+                state.timerEndTime = null;
+                timerComplete();
+            }
+        }
+    }, 5000);
 }
 
 function updateTimerDisplay() {
@@ -625,9 +711,19 @@ function timerComplete() {
     playNotificationSound();
     showVisualNotification();
 
+    // Notification navigateur pour alerter même en arrière-plan
+    const method = state.selectedMethod;
     if (state.timerMode === 'focus') {
+        showBrowserNotification(
+            `${method.icon} Focus terminé !`,
+            method.hasPause ? 'C\'est l\'heure de la pause !' : 'Session terminée !'
+        );
         handleFocusComplete();
     } else {
+        showBrowserNotification(
+            `${method.icon} Pause terminée !`,
+            'C\'est reparti pour un cycle de focus !'
+        );
         handlePauseComplete();
     }
 }
@@ -656,6 +752,7 @@ function handleFocusComplete() {
     state.timerMode = 'pause';
     state.timeRemaining = pauseDuration * 60;
     state.totalTime = pauseDuration * 60;
+    state.timerEndTime = null; // Reset pour le nouveau timer
 
     setupPauseView();
     showView('pause');
@@ -670,6 +767,7 @@ function handlePauseComplete() {
     state.timerMode = 'focus';
     state.timeRemaining = state.focusDuration * 60;
     state.totalTime = state.focusDuration * 60;
+    state.timerEndTime = null; // Reset pour le nouveau timer
 
     setupSessionView();
     showView('session');
@@ -695,6 +793,7 @@ function togglePauseBreak() {
     if (state.timerState === 'running') {
         state.timerState = 'paused';
         clearInterval(state.timerInterval);
+        state.timerEndTime = null; // Reset pour recalculer à la reprise
         pauseIcon.style.display = 'none';
         playIcon.style.display = 'inline';
     } else if (state.timerState === 'paused') {
@@ -821,6 +920,15 @@ function restoreSession() {
 
 // ========== INITIALIZATION ==========
 function init() {
+    // Demander la permission pour les notifications
+    requestNotificationPermission();
+
+    // Écouter les changements de visibilité de l'onglet
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Configurer la vérification en arrière-plan
+    setupBackgroundCheck();
+
     initDashboard();
     initConfigView();
     initSessionView();
